@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 5%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 40% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --primary: 262 83% 62%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 222 20% 18%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 20% 14%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 190 95% 55%;
+    --accent-foreground: 222 47% 5%;
+
+    --border: 222 20% 18%;
+    --input: 222 20% 18%;
+    --ring: 262 83% 62%;
+
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Subtle ambient background gradient for the whole app */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(60% 50% at 50% 0%, hsl(262 83% 62% / 0.12), transparent 70%),
+      radial-gradient(40% 40% at 100% 100%, hsl(190 95% 55% / 0.08), transparent 70%);
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
