@@ -31,6 +31,8 @@ interface RadioPlayerContextValue {
   toggleMute: () => void;
   /** Switch to a station; starts playing it immediately. */
   selectStation: (station: Station) => void;
+  /** Set the current station without starting playback (e.g. default). */
+  setStationWithoutPlaying: (station: Station) => void;
   /** The ordered list of browsable stations (the playlist for next/prev). */
   playlist: Station[];
   /** Replace the playlist used for next/previous navigation. */
@@ -350,6 +352,21 @@ export function RadioPlayerProvider({ children }: RadioPlayerProviderProps) {
     [clearReconnect, startStream],
   );
 
+  /**
+   * Make a station the current one without starting playback. Used to set a
+   * default station on load — actual playback waits for a user gesture, so we
+   * don't trip the browser's autoplay restrictions.
+   */
+  const setStationWithoutPlaying = useCallback((station: Station) => {
+    currentUrlRef.current = station.streamUrl;
+    setCurrentStation(station);
+    try {
+      localStorage.setItem(STATION_STORAGE_KEY, station.id);
+    } catch {
+      /* ignore storage errors */
+    }
+  }, []);
+
   const setPlaylist = useCallback((stations: Station[]) => {
     setPlaylistState(stations.length > 0 ? stations : STATIONS);
   }, []);
@@ -509,6 +526,7 @@ export function RadioPlayerProvider({ children }: RadioPlayerProviderProps) {
       setVolume,
       toggleMute,
       selectStation,
+      setStationWithoutPlaying,
       playlist,
       setPlaylist,
       next,
@@ -529,6 +547,7 @@ export function RadioPlayerProvider({ children }: RadioPlayerProviderProps) {
       setVolume,
       toggleMute,
       selectStation,
+      setStationWithoutPlaying,
       playlist,
       setPlaylist,
       next,

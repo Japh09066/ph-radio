@@ -153,6 +153,25 @@ export const STATIONS: Station[] = [
 /** Country code used by the "load more from this country" feature. */
 export const PH_COUNTRY_CODE = "PH";
 
+/**
+ * Preferred default station. When the live PH list loads and the listener
+ * hasn't already picked a station, the first station whose name matches this
+ * (case-insensitive) is auto-selected as the default. Using a name match
+ * (rather than a hardcoded stream URL) means the actual, reachable stream
+ * comes from live Radio Browser data instead of a guessed URL.
+ */
+export const PREFERRED_DEFAULT_NAME = "awr hope radio";
+
+/** Find the preferred default station in a list, if present. */
+export function findPreferredDefault(stations: Station[]): Station | undefined {
+  const needle = PREFERRED_DEFAULT_NAME.toLowerCase();
+  // Prefer an AWR Hope Radio entry; fall back to any AWR station.
+  return (
+    stations.find((s) => s.name.toLowerCase().includes(needle)) ??
+    stations.find((s) => s.name.toLowerCase().includes("awr"))
+  );
+}
+
 /** Resolve a station by id, falling back to the first station. */
 export function getStationById(id: string | null | undefined): Station {
   if (!id) return STATIONS[0];

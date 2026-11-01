@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   ChevronDown,
@@ -16,7 +16,11 @@ import { Button } from "@/components/ui/button";
 import { useCountryStations } from "@/hooks/use-country-stations";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useRadioPlayer } from "@/hooks/use-radio-player";
-import { PH_COUNTRY_CODE, STATIONS } from "@/lib/stations";
+import {
+  findPreferredDefault,
+  PH_COUNTRY_CODE,
+  STATIONS,
+} from "@/lib/stations";
 import { cn } from "@/lib/utils";
 import type { PhRegion, Station } from "@/types";
 
@@ -140,8 +144,14 @@ function StationCard({
  * island region: Luzon, Visayas and Mindanao.
  */
 export function StationPicker() {
-  const { currentStation, selectStation, setPlaylist, status, isPlaying } =
-    useRadioPlayer();
+  const {
+    currentStation,
+    selectStation,
+    setStationWithoutPlaying,
+    setPlaylist,
+    status,
+    isPlaying,
+  } = useRadioPlayer();
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
   const {
     stations: phStations,
@@ -168,6 +178,35 @@ export function StationPicker() {
   useEffect(() => {
     void loadPh();
   }, [loadPh]);
+
+  // Once PH stations load, make AWR Hope Radio the default — but only if the
+  // listener hasn't already chosen a station and nothing is playing yet.
+  // Uses the live stream URL from Radio Browser (not a guessed hardcoded one).
+  const defaultApplied = useRef(false);
+  useEffect(() => {
+    if (defaultApplied.current) return;
+    if (phState !== "loaded" || phStations.length === 0) return;
+
+    let hasSavedStation = false;
+    try {
+      hasSavedStation = localStorage.getItem("radio:station") !== null;
+    } catch {
+      /* ignore */
+    }
+    // Don't override a returning listener's choice or an in-progress stream.
+    if (hasSavedStation || status === "playing" || status === "loading") {
+      defaultApplied.current = true;
+      return;
+    }
+
+    const preferred = findPreferredDefault(phStations);
+    if (preferred) {
+      defaultApplied.current = true;
+      // Set as current without autoplaying (browsers block autoplay until a
+      // user gesture). The listener presses play to start AWR Hope Radio.
+      setStationWithoutPlaying(preferred);
+    }
+  }, [phState, phStations, status, setStationWithoutPlaying]);
 
   // Merge curated + live PH stations, de-duplicated by stream URL, with
   // Philippine stations listed first and all other countries at the end.
