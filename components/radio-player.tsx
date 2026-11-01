@@ -13,11 +13,9 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { SleepTimer } from "@/components/sleep-timer";
 import { StreamStatus } from "@/components/stream-status";
 import { useRadioPlayer } from "@/hooks/use-radio-player";
-import { cn } from "@/lib/utils";
 
 /**
  * The primary live radio player: a glassmorphism card with transport
@@ -35,7 +33,6 @@ export function RadioPlayer() {
     toggle,
     next,
     previous,
-    setVolume,
     toggleMute,
   } = useRadioPlayer();
 
@@ -162,15 +159,6 @@ export function RadioPlayer() {
             >
               <VolumeIcon className="h-5 w-5" />
             </Button>
-            <Slider
-              value={muted ? 0 : volume * 100}
-              onValueChange={(v) => setVolume(v / 100)}
-              aria-label="Volume"
-              className={cn(muted && "opacity-50")}
-            />
-            <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-              {Math.round((muted ? 0 : volume) * 100)}%
-            </span>
           </div>
 
           {/* Sleep timer */}
