@@ -122,6 +122,7 @@ export function RadioPlayerProvider({ children }: RadioPlayerProviderProps) {
         const m = storedMuted === "true";
         audio.muted = m;
         mutedRef.current = m;
+        if (m) audio.volume = 0;
         setMuted(m);
       }
       if (storedStation) {
@@ -158,8 +159,8 @@ export function RadioPlayerProvider({ children }: RadioPlayerProviderProps) {
     audio.load();
     // `load()` resets volume to 1 and muted to false — re-apply the user's
     // current settings so the volume slider and mute toggle actually stick.
-    audio.volume = volumeRef.current;
     audio.muted = mutedRef.current;
+    audio.volume = mutedRef.current ? 0 : volumeRef.current;
     const playPromise = audio.play();
     if (playPromise) {
       playPromise.catch(() => {
@@ -441,38 +442,58 @@ export function RadioPlayerProvider({ children }: RadioPlayerProviderProps) {
     };
   }, [play, pause, next, previous, playlist.length]);
 
-  const setVolume = useCallback((value: number) => {
-    const v = clamp(value, 0, 1);
-    volumeRef.current = v;
+  /** Apply volume + mute to the audio element in a cross-browser way. */
+  const applyAudioLevels = useCallback(() => {
     const audio = audioRef.current;
-    if (audio) {
-      audio.volume = v;
-      if (v > 0 && audio.muted) {
-        audio.muted = false;
+    if (!audio) return;
+    const effective = mutedRef.current ? 0 : volumeRef.current;
+    // Set both: `muted` for correct semantics, and `volume` to 0 so muting
+    // works even on browsers that are flaky about the muted property.
+    audio.muted = mutedRef.current;
+    audio.volume = effective;
+  }, []);
+
+  const setVolume = useCallback(
+    (value: number) => {
+      const v = clamp(value, 0, 1);
+      volumeRef.current = v;
+      // Raising the volume from a muted state unmutes.
+      if (v > 0 && mutedRef.current) {
         mutedRef.current = false;
         setMuted(false);
       }
-    }
-    setVolumeState(v);
-    try {
-      localStorage.setItem(VOLUME_STORAGE_KEY, String(v));
-    } catch {
-      /* ignore storage errors */
-    }
-  }, []);
+      // Lowering to 0 via the slider counts as muted.
+      if (v === 0 && !mutedRef.current) {
+        mutedRef.current = true;
+        setMuted(true);
+      }
+      applyAudioLevels();
+      setVolumeState(v);
+      try {
+        localStorage.setItem(VOLUME_STORAGE_KEY, String(v));
+      } catch {
+        /* ignore storage errors */
+      }
+    },
+    [applyAudioLevels],
+  );
 
   const toggleMute = useCallback(() => {
-    const audio = audioRef.current;
     const next = !mutedRef.current;
     mutedRef.current = next;
-    if (audio) audio.muted = next;
+    // If unmuting while the volume is at 0, restore a sensible level.
+    if (!next && volumeRef.current === 0) {
+      volumeRef.current = 0.5;
+      setVolumeState(0.5);
+    }
+    applyAudioLevels();
     setMuted(next);
     try {
       localStorage.setItem(MUTED_STORAGE_KEY, String(next));
     } catch {
       /* ignore storage errors */
     }
-  }, []);
+  }, [applyAudioLevels]);
 
   const value = useMemo<RadioPlayerContextValue>(
     () => ({
