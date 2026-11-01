@@ -11,7 +11,7 @@ A modern, production-ready online radio platform built with **Next.js 15**, **Re
 - Search by name, genre or country
 - One click to switch the live stream; selection is remembered
 - Ships with SomaFM, Radio Paradise and Radio France (FIP) streams
-- **Every Philippine station** loaded live from the open [Radio Browser](https://api.radio-browser.info/) database (45,000+ worldwide), with no broken/https-only filtering. `http://` streams are played through a built-in proxy (`/api/stream`) so they are not blocked by the browser's mixed-content policy.
+- **Every reachable Philippine station** loaded live from the open [Radio Browser](https://api.radio-browser.info/) database (45,000+ worldwide). Unreachable stations (those that failed Radio Browser's last health check) are filtered out. `http://` streams are played through a built-in proxy (`/api/stream`) so they are not blocked by the browser's mixed-content policy.
 
 ### Live Radio Player
 - Play / pause, volume control, mute / unmute

@@ -271,18 +271,21 @@ function mapStation(raw: RawStation, countryLabel: string): Station | null {
 
 /**
  * Fetch stations for a given ISO country code (e.g. "PH"), ordered by votes.
- * De-duplicates by stream URL and keeps only playable (https) streams.
+ * Only reachable stations are returned (those that passed Radio Browser's
+ * last health check); http streams are kept and proxied to https so they
+ * still play. Results are de-duplicated by the original upstream URL.
  */
 export async function fetchStationsByCountry(
   countryCode: string,
   countryLabel: string,
   limit = 1000,
 ): Promise<Station[]> {
-  // No `hidebroken` filter: return every station for the country. http
-  // streams are proxied to https so they play, so we keep them all.
+  // `hidebroken=true` asks the API to exclude stations that failed its last
+  // health check, so unreachable stations are dropped. http streams are still
+  // kept (they are proxied to https so they play).
   const path = `/json/stations/bycountrycodeexact/${encodeURIComponent(
     countryCode,
-  )}?order=votes&reverse=true&limit=${limit}`;
+  )}?hidebroken=true&order=votes&reverse=true&limit=${limit}`;
 
   let lastError: unknown = null;
 
@@ -300,6 +303,8 @@ export async function fetchStationsByCountry(
       const seen = new Set<string>();
       const stations: Station[] = [];
       for (const r of raw) {
+        // Skip stations whose last health check failed (unreachable).
+        if (r.lastcheckok !== 1) continue;
         const original = r.url_resolved || r.url;
         if (!original) continue;
         if (seen.has(original)) continue;
